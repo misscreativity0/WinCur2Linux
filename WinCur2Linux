@@ -1,0 +1,119 @@
+#!/bin/bash
+
+#A program for converting Windows Cursors to Linux Cursors
+#At the moment, only static cursors (.cur) are supported by this programm
+#If you have animated cursors (.ani), use windows programms or wine
+#You can also create them by yourself: place every frame for a cursor in a subfolder
+
+#Tutorials for making all of this stuff manually
+#http://www.ehow.com/how_5026012_make-cursors-file-ubuntu.html
+#http://tomswebspace.com/creating-cursor-themes-linux/
+
+
+#Help to rename the cursors right, so your linux can find them (and you can use them)
+#http://gnome-look.org/content/show.php/Dummy+X11+cursors?content=128170
+#http://www.freedesktop.org/wiki/Specifications/cursor-spec/
+
+cursordir=~/.icons
+theme="UC_Cursors"
+color="blue"
+themepath="${cursordir}/${theme}_${color}"
+URL="http://rihokroll.deviantart.com/art/UbuntuConcept-Cursors-for-Win-163157375"
+
+
+
+size=32
+pos="0 0"
+delay="60"
+
+cd "$1"
+
+
+for wincur in *.cur
+do
+	convert -size 32x32  -background none $wincur $(echo "$wincur" | cut -d . -f 1).png
+done
+echo "All cur files converted to png"
+
+for winani in *.ani
+do
+	convert -size 32x32 -background none $winani $(echo "$winani" | cut -d . -f 1).png
+done
+
+echo ""
+echo "For ani files, please use windows tools, f.e. iconlover (with windows or wine)"
+echo "with this programm, export all frames in an extra folder with file->export->images for development"
+
+echo ""
+echo "Creating index.theme"
+echo "Name=$theme-$color" >>../index.theme
+echo "Comment=a nice cursor theme">>../index.theme
+
+
+
+#static cursors
+
+echo ""
+
+for img in *.png
+do
+	conf=$(echo $img | cut -d . -f 1).config
+	
+	echo "Creating config file for $img"
+	echo "$size $pos $img" >>"$conf"
+	echo "Created $conf"
+		
+	echo "------"
+	cat "$conf"
+
+	
+		
+done
+
+
+
+#animated cursors, frames stored in extra folder
+
+echo ""
+for fol in $(find . -type d | cut -d / -f 2- | grep -v cursors); do
+	for imglist in $(find $fol/*.png;); do
+		
+		confd="$fol".config
+		
+		
+		echo "Creating config file for $fol"
+		
+		echo "$size $pos $imglist $delay" >> "$confd"
+		
+		echo "Created $confd"
+		echo "------"
+		cat "$confd"
+		
+	done
+
+done
+
+
+ 
+
+#X-Cursor erstellen
+
+echo ""
+
+for allconf in *.config
+do
+	xcur=$(find "$allconf" | cut -d . -f 1)
+	mkdir -p cursors
+
+	xcursorgen "$allconf" "cursors/$xcur"
+	echo "Cursor $xcur created"
+done
+
+
+#Copy the files to the correct folder"
+
+echo ""
+mkdir -p $cursordir
+mkdir -p "$themepath"
+cp -R  cursors index.theme "$themepath"
+
